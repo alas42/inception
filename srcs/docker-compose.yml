@@ -1,0 +1,64 @@
+version: '3'
+services:
+    mariadb:
+        build:
+            context: ./requirements/docker-mariadb
+        container_name: mariadb
+        restart: always
+        volumes:
+            - db_volume:/var/lib/mysql
+        env_file: 
+            - .env
+        expose:
+            - "3306"
+        networks:
+            - docker-network
+
+    wordpress:
+        build:
+            context: ./requirements/docker-wordpress
+        container_name: wordpress
+        restart: always
+        volumes:
+            - wp_volume:/var/www/html
+        depends_on:
+            - mariadb
+        env_file: 
+            - .env
+        expose: 
+            - "9000"
+        networks:
+            - docker-network
+
+    nginx:
+        build:
+            context: ./requirements/docker-nginx
+        container_name: nginx
+        restart: always
+        volumes:
+            - wp_volume:/var/www/html
+        depends_on:
+            - wordpress
+        ports:
+            - "127.0.0.1:443:443"
+        networks:
+            - docker-network
+
+networks:
+    docker-network:
+        driver: bridge
+
+volumes:
+    wp_volume:
+        driver: local
+        driver_opts:
+            o: bind
+            type: none
+            device: /home/avogt/data/html
+
+    db_volume:
+        driver: local
+        driver_opts:
+            o: bind
+            type: none
+            device: /home/avogt/data/mysql
